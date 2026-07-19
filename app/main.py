@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from scalar_fastapi import get_scalar_api_reference
 from app.database import engine 
 from app.models import asset, user
-from app.routers import asset as asset_router
+from app.routers import asset as asset_router, user as user_router
 
 
 # Create all tables in database
@@ -13,6 +13,7 @@ asset.Base.metadata.create_all(bind=engine)
 #  Initialize FastAPI app
 app = FastAPI(title="Asset Manager API")
 app.include_router(asset_router.router)
+app.include_router(user_router.router)
 
 
 @app.get("/", include_in_schema=False)
