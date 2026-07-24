@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from app.database import get_db 
 from app.crud import asset as crud_asset
 from app.schemas.asset import AssetCreate, AssetResponse 
 from app.models.asset import Asset
+from app.oauth2 import get_current_user
+from app.models.user import User, UserRole 
+
 
 # Create a new router instance for asset-related endpoints
 router = APIRouter(
@@ -14,19 +18,24 @@ router = APIRouter(
 
 # Define an endpoint for creating a new asset
 @router.post("/", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
-def create_new_asset(asset:AssetCreate, db: Session = Depends(get_db)) -> Asset:
+def create_new_asset(asset:AssetCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Asset:
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action"
+        )
     return crud_asset.create_asset(db, asset) 
 
 
 # Define an endpoint for retrieving all assets
 @router.get("/", response_model=list[AssetResponse])
-def get_all_assets(db: Session = Depends(get_db)) -> list[Asset]:
+def get_all_assets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[Asset]:
     return crud_asset.get_all_assets(db)
 
 
 # Define an endpoint for retrieving an asset by its ID
 @router.get("/{asset_id}", response_model=AssetResponse)
-def get_asset_by_id(asset_id: int, db: Session = Depends(get_db)) -> Asset | None:
+def get_asset_by_id(asset_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Asset | None:
     asset = crud_asset.get_asset_by_id(db, asset_id)
 
     if asset is None:
