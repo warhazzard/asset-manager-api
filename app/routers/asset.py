@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.database import get_db 
 from app.crud import asset as crud_asset
@@ -29,8 +30,14 @@ def create_new_asset(asset:AssetCreate, db: Session = Depends(get_db), current_u
 
 # Define an endpoint for retrieving all assets
 @router.get("/", response_model=list[AssetResponse])
-def get_all_assets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[Asset]:
-    return crud_asset.get_all_assets(db)
+def get_all_assets(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user),
+    limit: int = 10,
+    offset: int = 0,
+    search: Optional[str] = None
+) -> list[Asset]:
+    return crud_asset.get_all_assets(db, limit=limit, offset=offset, search=search)
 
 
 # Define an endpoint for retrieving an asset by its ID
